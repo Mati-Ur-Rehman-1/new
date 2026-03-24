@@ -1,0 +1,324 @@
+n8n Workflow Documentation
+
+Selr AI — Audit Initial Shopping List Generation
+
+Workflow Diagram
+
+┌─────────────────────────────────────────────┐
+│         🔗 Webhook                          │
+│   Step 1: Webhook                           │
+│   Receives GHL form data on /ai-audit       │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         💻 Code Node                        │
+│   Step 2: Clean Webhook Data                │
+│   Extracts and formats specific form fields │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         📊 Google Sheets                    │
+│   Steps 3 & 4: Fetch Agent 1 References     │
+│   Reads Tech Stack & Automation Patterns    │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         💻 Code Node                        │
+│   Step 5: Parse data to agent 1             │
+│   Merges client data with sheet references  │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         🤖 OpenAI (GPT-5.2)                 │
+│   Step 6: Opportunity Identifier            │
+│   Agent 1: Identifies automation gaps       │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         💻 Code Node                        │
+│   Step 7: Clean agent 1 output              │
+│   Parses string to clean JSON               │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         📊 Google Sheets                    │
+│   Steps 8 & 9: Fetch Agent 2 References     │
+│   Reads Tier Classifications & Adjustments  │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         💻 Code Node                        │
+│   Step 10: Parse Agent 1 Output & Ref Data  │
+│   Prepares payload for Complexity Assessor  │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         🤖 OpenAI (GPT-5.2)                 │
+│   Step 11: Complexity Assessor              │
+│   Agent 2: Estimates hours and tiers        │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         💻 Code Node                        │
+│   Step 12: Clean Agent 2 output             │
+│   Cleans AI output and merges data          │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         📊 Google Sheets                    │
+│   Steps 13 & 14: Fetch Agent 3 References   │
+│   Reads Pricing Tiers & Adjustment Factors  │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         💻 Code Node                        │
+│   Step 15: Parse Data To Agent 3            │
+│   Compiles data for the final pricing agent │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         🤖 OpenAI (GPT-5.2)                 │
+│   Step 16: Pricing & Packager               │
+│   Agent 3: Prices items and structures JSON │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         💻 Code Node                        │
+│   Step 17: Clean Agent 3 Output             │
+│   Strict Budget Enforcer & Totals Validator │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         💻 Code Node                        │
+│   Step 18: best                             │
+│   Generates HTML code for the PDF           │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         📄 PDF.co                           │
+│   Step 19: PDFco Api                        │
+│   Converts HTML payload to a hosted PDF     │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         💻 Code Node                        │
+│   Step 20: Code in JavaScript               │
+│   Prepares mapped fields for GHL push       │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│         📞 GoHighLevel API                  │
+│   Step 21: Create or update a contact       │
+│   Updates Custom Fields with PDF and JSON   │
+└─────────────────────────────────────────────┘
+
+Step-by-Step Node Documentation
+
+Step 1 — Webhook: Webhook
+
+App: n8n Core Node
+Action: Listen for Event
+Type: Trigger
+Purpose:
+Acts as the entry point for the automation. It listens for a POST request on the `/ai-audit` endpoint, which is triggered by GoHighLevel when a client submits their Deep Onboarding Form.
+Configuration Notes:
+Uses path `ai-audit`.
+Accepts POST method.
+
+Step 2 — Code Node: Clean Webhook Data
+
+App: Code
+Action: Run JavaScript
+Type: Action
+Purpose:
+Extracts raw payload data from the GHL webhook and maps it into a clean, structured JSON object. It pulls out critical keys like "Business name", "What's your budget for this build?", current tools, pain points, and existing automations.
+
+Step 3 — Google Sheets: Tech stack sheet
+
+App: Google Sheets
+Action: Get Many Spreadsheet Rows
+Type: Action
+Purpose:
+Fetches reference data from the "Tech Stack Integrations" sheet to understand the integration complexity of the client's current tools.
+
+Step 4 — Google Sheets: Automation Patterns sheet
+
+App: Google Sheets
+Action: Get Many Spreadsheet Rows
+Type: Action
+Purpose:
+Fetches reference data from the "Automation Patterns" sheet to provide Agent 1 with standard templates.
+
+Step 5 — Code Node: Parse data to agent 1
+
+App: Code
+Action: Run JavaScript
+Type: Action
+Purpose:
+Consolidates the cleaned client data (Step 2), tech stack data (Step 3), and automation patterns (Step 4) into a single JSON object (`client_data` and `reference_data`) to pass safely to the first AI Agent.
+
+Step 6 — OpenAI: Opportunity Identifier
+
+App: OpenAI (LangChain)
+Action: POST
+Type: Action
+Purpose:
+This is Agent 1 (running GPT-5.2). It acts as an expert consultant, analyzing the client's form data to identify explicit and implicit automation opportunities, ensuring no tools outside their confirmed tech stack are suggested.
+
+Step 7 — Code Node: Clean agent 1 output
+
+App: Code
+Action: Run JavaScript
+Type: Action
+Purpose:
+Removes any Markdown formatting (like ```json) from Agent 1's output, parses the string into a valid JSON object, and extracts the cleaned array of opportunities.
+
+Step 8 & 9 — Google Sheets: Adjustment Factor Sheet & Tier Classification
+
+App: Google Sheets
+Action: Get Many Spreadsheet Rows
+Type: Action
+Purpose:
+Fetches dynamic rules for pricing adjustments and tier maximum hours. These will be used by Agent 2 to accurately estimate the workload.
+
+Step 10 — Code Node: Parse Agent 1 Output And Refrence sheet data
+
+App: Code
+Action: Run JavaScript
+Type: Action
+Purpose:
+Combines Agent 1's opportunities with the newly fetched sheet data (Tiers and Adjustment Factors) so Agent 2 has the full context needed for complexity scoring.
+
+Step 11 — OpenAI: Complexity Assessor
+
+App: OpenAI (LangChain)
+Action: POST
+Type: Action
+Purpose:
+This is Agent 2. It estimates the exact build hours for each opportunity by analyzing triggers, integrations, and AI calls. It classifies automations into Tiers (Single-Stage, Multi-Stage, Multi-Workflow) strictly based on estimated hours and flags items exceeding limits as Retainer candidates.
+
+Step 12 — Code Node: Clean Agent 2 output
+
+App: Code
+Action: Run JavaScript
+Type: Action
+Purpose:
+Cleans markdown from Agent 2's response, parses it, and merges the new tier classifications and hours with the original client data.
+
+Step 13 & 14 — Google Sheets: Pricing Tier & Adjustment Factor
+
+App: Google Sheets
+Action: Get Many Spreadsheet Rows
+Type: Action
+Purpose:
+Fetches the financial reference sheets (Base prices, Max prices, and Add-on costs) one final time to guarantee Agent 3 has the most up-to-date pricing matrix.
+
+Step 15 — Code Node: Parse Data To Agent 3
+
+App: Code
+Action: Run JavaScript
+Type: Action
+Purpose:
+Constructs the final, massive payload for the packager agent. It includes the assessed opportunities, raw form budget, pricing tiers, and adjustment factors.
+
+Step 16 — OpenAI: Pricing & Packager
+
+App: OpenAI (LangChain)
+Action: POST
+Type: Action
+Purpose:
+This is Agent 3. It calculates the dollar value of every automation, limits prices based on tier maximums, and structures the final shopping list. It also creates the Executive Summary and Phased Roadmap.
+
+Step 17 — Code Node: Clean Agent 3 Output
+
+App: Code
+Action: Run JavaScript
+Type: Action
+Purpose:
+Acts as the strict **"Budget Enforcer v4"**. This code node intercepts Agent 3's output and hard-verifies the math. If the total price exceeds the client's stated budget ceiling, it automatically defers lower-priority automations to a "Future Phase" to ensure the final proposed price never exceeds the client's budget. It rebuilds all totals and phases dynamically.
+
+Step 18 — Code Node: best
+
+App: Code
+Action: Run JavaScript
+Type: Action
+Purpose:
+Takes the validated JSON from Step 17 and injects it into a massive HTML/CSS template. It formats the cover page, executive summary, phased roadmap, and pricing tables with Selr AI's visual branding.
+
+Step 19 — PDF.co: PDFco Api
+
+App: PDF.co
+Action: URL/HTML to PDF
+Type: Action
+Purpose:
+Takes the raw HTML string from Step 18 and converts it into a high-quality, client-ready PDF file. It returns a secure URL for the generated document.
+
+Step 20 — Code Node: Code in JavaScript
+
+App: Code
+Action: Run JavaScript
+Type: Action
+Purpose:
+Extracts the generated PDF URL and structures the final JSON payload needed to update the client's GoHighLevel record.
+
+Step 21 — GoHighLevel API: Create or update a contact
+
+App: HighLevel
+Action: Update Contact
+Type: Action
+Purpose:
+Pushes the generated assets back to the CRM using the `contact_id`.
+Updates Custom Fields:
+* Initial Shopping List (URL to the PDF)
+* Shopping List JSON (Raw JSON used for revision workflow)
+* Total Estimated Investment (The calculated range string)
+* Automation Count
+
+Workflow Summary
+
+This n8n workflow completely automates the Selr AI audit process. Triggered instantly upon the submission of a client's Deep Onboarding Form, it fetches current pricing and rules from Google Sheets. It then routes the data through a 3-agent pipeline: Agent 1 identifies opportunities, Agent 2 assesses technical complexity and hours, and Agent 3 packages the pricing. A custom Budget Enforcer node guarantees the proposal stays within the client's budget. Finally, the structured data is converted into a branded HTML PDF via PDF.co and pushed back to the client's GoHighLevel contact record.
+
+Workflow Summary
+
+This n8n workflow completely automates the Selr AI audit process. Triggered instantly upon the submission of a client's Deep Onboarding Form, it fetches current pricing and rules from Google Sheets. It then routes the data through a 3-agent pipeline: Agent 1 identifies opportunities, Agent 2 assesses technical complexity and hours, and Agent 3 packages the pricing. A custom Budget Enforcer node guarantees the proposal stays within the client's budget. Finally, the structured data is converted into a branded HTML PDF via PDF.co and pushed back to the client's GoHighLevel contact record.
+
+| Step | App | Action | Role |
+|---|---|---|---|
+| 1 | n8n Webhook | Listen for Event | Trigger — receives GHL form data |
+| 2 | Code | Run JavaScript | Cleans and formats raw webhook data |
+| 3 | Google Sheets | Get Many Spreadsheet Rows | Fetches Tech Stack sheet |
+| 4 | Google Sheets | Get Many Spreadsheet Rows | Fetches Automation Patterns |
+| 5 | Code | Run JavaScript | Parses data to Agent 1 |
+| 6 | OpenAI | POST | Agent 1 (Opportunity Identifier) |
+| 7 | Code | Run JavaScript | Cleans Agent 1 output |
+| 8 | Google Sheets | Get Many Spreadsheet Rows | Fetches Adjustment Factors |
+| 9 | Google Sheets | Get Many Spreadsheet Rows | Fetches Tier Classification |
+| 10 | Code | Run JavaScript | Parses Agent 1 output & reference data |
+| 11 | OpenAI | POST | Agent 2 (Complexity Assessor) |
+| 12 | Code | Run JavaScript | Cleans Agent 2 output |
+| 13 | Google Sheets | Get Many Spreadsheet Rows | Fetches Pricing Tiers |
+| 14 | Google Sheets | Get Many Spreadsheet Rows | Fetches Adjustment Factors |
+| 15 | Code | Run JavaScript | Parses Data To Agent 3 |
+| 16 | OpenAI | POST | Agent 3 (Pricing & Packager) |
+| 17 | Code | Run JavaScript | Cleans Agent 3 output (Budget Enforcer) |
+| 18 | Code | Run JavaScript | Generates HTML layout for PDF |
+| 19 | PDF.co | URL/HTML to PDF | Converts HTML payload to PDF |
+| 20 | Code | Run JavaScript | Extracts PDF URL & structures JSON |
+| 21 | HighLevel | Update Contact | Pushes data back to GHL CRM |
