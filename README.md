@@ -1,39 +1,33 @@
-# Selr AI Audit Automation
+# Selr AI Audit Automation System
 
-This documentation outlines the workflow for the Selr AI Audit Automation system.
+This documentation outlines the complete start-to-end automated pipeline for generating priced "Automation Shopping Lists" for Selr AI clients.
 
 ## Overview
 
-This automated process is designed to generate a priced "Automation Shopping List" for Selr AI audit clients. The top-level flow is:
+The system automates the manual analysis of client onboarding data. It transforms raw form responses into a professional, accurately priced PDF proposal within minutes. The high-level flow is:
 
-1. Client data and form responses are fetched from the GoHighLevel (GHL) Deep Onboarding Form.
-2. The data is processed through a multi-agent AI pipeline in n8n to assess complexity and pricing.
-3. A professional PDF is generated, pushed back to GHL, and the team gets notified.
+1. **Trigger:** Client submits the Deep Onboarding Form in GoHighLevel (GHL).
+2. **Orchestration:** n8n fetches the data and routes it through a 3-agent AI pipeline.
+3. **Intelligence:** AI Agents identify opportunities, assess complexity, and apply pricing based on Google Sheets reference data.
+4. **Delivery:** A professional PDF is generated via PDF.co and synced back to the GHL contact record.
+5. **Revision:** Discovery call transcripts can be used to automatically update the proposal.
 
 ## Workflows
 
-The system is composed of interconnected workflows and reference data. Detailed documentation for each can be found in the links below:
+The system is composed of interconnected workflows. Detailed documentation for each component can be found below:
 
-### 1. n8n Initial Shopping List Workflow
+### 1. GHL Audit Trigger Workflow
+The entry point that captures form submissions and initiates the automation.
+* [GHL Audit Trigger Documentation](./GHL_Audit_Trigger.md)
 
-Fetches form data from GHL, processes it through AI agents, and generates the initial PDF.
+### 2. n8n Initial Generation Pipeline
+The core engine that processes data through AI agents and generates the initial PDF.
+* [n8n Initial Generation Documentation](./n8n_Initial_Generation.md)
 
-- [AI Audit Initial Generation Workflow](./AI_Audit_Initial_Generation.md)
+### 3. n8n Transcript Revision Workflow
+The secondary flow that amends proposals based on discovery call insights.
+* [n8n Transcript Revision Documentation](./n8n_Transcript_Revision.md)
 
-### 2. n8n Transcript Revision Workflow
-
-Triggered by an internal form to revise the existing shopping list based on a discovery call transcript.
-
-- [AI Audit Transcript Revision Workflow](./AI_Audit_Transcript_Revision.md)
-
-### 3. Google Sheets Reference Data
-
-Stores the pricing tiers, adjustment factors, and automation patterns used by the AI pipeline.
-
-- [AI Audit Reference Data](./AI_Audit_Reference_Data.md)
-
-### 4. GHL Configuration Setup
-
-Handles the initial webhook triggers, custom fields, and internal team notifications in GoHighLevel.
-
-- [AI Audit GHL Configuration](./AI_Audit_GHL_Configuration.md)
+### 4. Reference Data (Google Sheets)
+The dynamic "database" for pricing tiers, adjustment factors, and patterns.
+* [Reference Data Documentation](./Audit_Reference_Data.md)
